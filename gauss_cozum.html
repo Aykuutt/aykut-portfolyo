@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gauss Yok Etme Algoritması</title>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --success: #4cc9f0;
+            --danger: #f72585;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --border: #dee2e6;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+            min-height: 100vh;
+            color: var(--dark);
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            color: #6c757d;
+            font-size: 1.1rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            margin-bottom: 25px;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #6c757d;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.4s;
+        }
+
+        /* Input Controls */
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        label {
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        input[type="number"] {
+            width: 70px;
+            padding: 8px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 1rem;
+            text-align: center;
+        }
+
+        textarea {
+            width: 100%;
+            height: 120px;
+            padding: 15px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: monospace;
+            resize: vertical;
+            box-sizing: border-box;
+            line-height: 1.5;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+        }
+
+        /* Logic for Matrix Grid */
+        .matrix-wrapper {
+            display: inline-block;
+            position: relative;
+            padding: 0 15px;
+            margin: 20px 0;
+        }
+
+        .matrix-wrapper::before,
+        .matrix-wrapper::after {
+            content: '';
+            position: absolute;
+            top: -5px;
+            bottom: -5px;
+            width: 10px;
+            border: 2px solid var(--dark);
+        }
+
+        .matrix-wrapper::before {
+            left: 0;
+            border-right: none;
+        }
+
+        .matrix-wrapper::after {
+            right: 0;
+            border-left: none;
+        }
+
+        .matrix-grid {
+            display: grid;
+            gap: 5px;
+            align-items: center;
+        }
+
+        .matrix-cell {
+            width: 60px;
+            padding: 8px 5px;
+            text-align: center;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        .matrix-cell:focus {
+            border-color: var(--primary);
+            outline: none;
+            background: #f8f9fe;
+        }
+
+        .matrix-cell.augmented {
+            border-left: 2px dashed #adb5bd;
+            background-color: #f8f9fa;
+        }
+
+        /* Buttons */
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--secondary);
+            transform: translateY(-1px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--dark);
+        }
+
+        .btn-outline:hover {
+            background: var(--light);
+        }
+
+        /* Results Area */
+        #resultsArea {
+            margin-top: 30px;
+        }
+
+        .step-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid var(--primary);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+            animation: slideUp 0.4s ease forwards;
+            opacity: 0;
+        }
+
+        .step-header {
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .step-operation {
+            background: #f8f9fe;
+            padding: 8px 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            color: var(--secondary);
+            font-size: 1.05rem;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+
+        .final-result {
+            background: #f0fdf4;
+            border-left-color: #22c55e;
+            font-size: 1.1rem;
+        }
+
+        .final-error {
+            background: #fef2f2;
+            border-left-color: #ef4444;
+            color: #b91c1c;
+            font-size: 1.2rem;
+            text-align: center;
+            font-weight: bold;
+            padding: 30px;
+        }
+
+        .big-icon {
+            font-size: 3rem;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        /* Readonly Matrix for Display */
+        .display-matrix {
+            border-collapse: collapse;
+            margin: 10px 15px;
+            position: relative;
+        }
+
+        .display-matrix::before,
+        .display-matrix::after {
+            content: '';
+            position: absolute;
+            top: -5px;
+            bottom: -5px;
+            width: 6px;
+            border: 2px solid var(--dark);
+        }
+
+        .display-matrix::before {
+            left: -10px;
+            border-right: none;
+        }
+
+        .display-matrix::after {
+            right: -10px;
+            border-left: none;
+        }
+
+        .display-matrix td {
+            padding: 8px 12px;
+            text-align: center;
+            min-width: 40px;
+        }
+
+        .display-matrix td.aug-col {
+            border-left: 1px dashed #999;
+            font-weight: bold;
+            background: rgba(0, 0, 0, 0.02);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>Gauss Yok Etme Algoritması</h1>
+            <div class="subtitle">Denklem sistemlerini adım adım matris yöntemiyle çözün</div>
+        </div>
+
+        <div class="card">
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('eqTab')">📝 Denklem Olarak Gir</div>
+                <div class="tab" onclick="switchTab('matrixTab')">🔢 Matris Tablosuna Gir</div>
+            </div>
+
+            <!-- YONTEM 1: Denklem Denetimi -->
+            <div id="eqTab" class="tab-content active">
+                <p style="color: #666; margin-top:0;">Denklemleri alt alta yazın (Örn: <code>2x + 3y - z = 5</code> veya
+                    <code>a - 2b = 10</code>). Bilinmeyenler otomatik algılanacaktır.
+                </p>
+                <textarea id="equationInput"
+                    placeholder="x + y + z = 6&#10;2x + 5y - z = -4&#10;2x + y - z = 2"></textarea>
+
+                <div class="btn-group">
+                    <button class="btn-primary" onclick="solveFromEquations()">Adım Adım Çöz</button>
+                    <button class="btn-outline"
+                        onclick="document.getElementById('equationInput').value=''">Temizle</button>
+                </div>
+            </div>
+
+            <!-- YONTEM 2: Matris Denetimi -->
+            <div id="matrixTab" class="tab-content">
+                <div class="control-group">
+                    <label>Satır (Denklem Sayısı): <input type="number" id="rowCount" value="3" min="1"
+                            max="10"></label>
+                    <label>Bilinmeyen Sayısı: <input type="number" id="varCount" value="3" min="1" max="10"></label>
+                    <button class="btn-outline" onclick="generateMatrixGrid()" style="padding: 6px 15px;">Izgarayı
+                        Oluştur</button>
+                </div>
+
+                <div style="text-align: center; overflow-x: auto;">
+                    <div class="matrix-wrapper">
+                        <div class="matrix-grid" id="matrixGrid">
+                            <!-- JS ile dolacak -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn-primary" onclick="solveFromGrid()">Adım Adım Çöz</button>
+                    <button class="btn-outline" onclick="fillRandomMatrix()">Rastgele Doldur</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sonuclar -->
+        <div id="resultsArea">
+            <!-- JS tarafindan doldurulacak -->
+        </div>
+
+    </div>
+
+    <script>
+        // Tab degistirme mantigi
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+            event.target.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        // --- MATRIS OLUSTURMA (UI) ---
+        function generateMatrixGrid() {
+            const rows = parseInt(document.getElementById('rowCount').value);
+            const vars = parseInt(document.getElementById('varCount').value);
+            const cols = vars + 1; // Genisletilmis matris icin +1 (sonuclar)
+
+            const grid = document.getElementById('matrixGrid');
+            grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+            grid.innerHTML = '';
+
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const input = document.createElement('input');
+                    input.type = 'number';
+                    input.step = 'any';
+                    input.className = 'matrix-cell';
+                    if (c === cols - 1) input.classList.add('augmented');
+                    input.dataset.row = r;
+                    input.dataset.col = c;
+                    grid.appendChild(input);
+                }
+            }
+        }
+
+        function fillRandomMatrix() {
+            document.querySelectorAll('.matrix-cell').forEach(cell => {
+                cell.value = Math.floor(Math.random() * 20) - 10; // -10 ile 10 arasi
+            });
+        }
+
+        // Sayfa yuklendiginde varsayilan ızgarayi ciz
+        window.onload = generateMatrixGrid;
+
+        // --- 1. VERI ALMA ISLEMLERI ---
+
+        // TAB 1: Denklemlerden Matris Uretme
+        function solveFromEquations() {
+            const text = document.getElementById('equationInput').value;
+            const matrix = parseEquationsToMatrix(text);
+            if (!matrix) return;
+            startGauss(matrix);
+        }
+
+        function parseEquationsToMatrix(text) {
+            // Basit boşlukları temizleyip satırlara ayır
+            const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            if (lines.length === 0) {
+                alert("Lütfen en az 1 denklem girin.");
+                return null;
+            }
+
+            // Tüm metindeki eşsiz değişken isimlerini (a-z) bul
+            const varSet = new Set();
+            const varRegex = /[a-zA-Z]/g;
+            let match;
+            while ((match = varRegex.exec(text)) !== null) {
+                varSet.add(match[0]);
+            }
+
+            // Değişkenleri alfabetik sıraya diz (x, y, z gibi)
+            const variables = Array.from(varSet).sort();
+
+            if (variables.length === 0) {
+                alert("Denklemlerde hiç değişken bulunamadı!");
+                return null;
+            }
+
+            const matrix = [];
+
+            // Her satırı işle
+            lines.forEach((line, rowIndex) => {
+                const row = new Array(variables.length + 1).fill(0); // +1 sonuc icin
+
+                // "=" işaretine gore ayir (sol taraf denklemler, sag taraf sonuc)
+                const parts = line.split('=');
+                if (parts.length !== 2) {
+                    alert(`Hata: ${rowIndex + 1}. satırda eşittir (=) işareti hatalı.\nÖrnek: 2x + y = 10`);
+                    throw new Error("Invalid equation");
+                }
+
+                let leftSide = parts[0].replace(/\s+/g, ''); // Boşlukları sil ("2x+3y-z")
+                let rightSide = parseFloat(parts[1].trim());
+
+                // Sol taraftaki terimleri ayır (-, +) isaretlerini koruyarak
+                let terms = leftSide.match(/[+-]?[^+-]+/g) || [];
+
+                terms.forEach(term => {
+                    let vMatch = term.match(/[a-zA-Z]/);
+                    if (vMatch) {
+                        let vName = vMatch[0];
+                        let vIndex = variables.indexOf(vName);
+
+                        let coeffStr = term.replace(vName, '');
+
+                        let coeff = 1;
+                        if (coeffStr === "-" || coeffStr === "+-") coeff = -1;
+                        else if (coeffStr === "+" || coeffStr === "") coeff = 1;
+                        else coeff = parseFloat(coeffStr);
+
+                        row[vIndex] += coeff;
+                    } else {
+                        rightSide -= parseFloat(term);
+                    }
+                });
+
+                row[variables.length] = rightSide;
+                matrix.push(row);
+            });
+
+            return matrix;
+        }
+
+        // TAB 2: Grid'den Matris Çekme
+        function solveFromGrid() {
+            const rows = parseInt(document.getElementById('rowCount').value);
+            const cols = parseInt(document.getElementById('varCount').value) + 1;
+            const matrix = [];
+
+            for (let r = 0; r < rows; r++) {
+                const rowArr = [];
+                for (let c = 0; c < cols; c++) {
+                    const input = document.querySelector(`.matrix-cell[data-row="${r}"][data-col="${c}"]`);
+                    const val = parseFloat(input.value);
+                    if (isNaN(val)) {
+                        alert(`Lütfen ${r + 1}. satır ${c + 1}. sütuna geçerli bir sayı girin.`);
+                        return;
+                    }
+                    rowArr.push(val);
+                }
+                matrix.push(rowArr);
+            }
+
+            startGauss(matrix);
+        }
+
+        // --- 2. UI YARDIMCI METOTLARI ---
+
+        function renderMatrixHTML(mat) {
+            let html = '<table class="display-matrix">';
+            let rows = mat.length;
+            let cols = mat[0].length;
+
+            for (let i = 0; i < rows; i++) {
+                html += '<tr>';
+                for (let j = 0; j < cols; j++) {
+                    let val = mat[i][j];
+                    if (Math.abs(val) < 1e-10) val = 0; // -0 mantıksızlığını düzeltir
+                    let displayVal = Number.isInteger(val) ? val : parseFloat(val.toFixed(3));
+
+                    let cName = (j === cols - 1) ? 'aug-col' : '';
+                    html += `<td class="${cName}">${displayVal}</td>`;
+                }
+                html += '</tr>';
+            }
+            html += '</table>';
+            return html;
+        }
+
+        function addStepToUI(operationText, matrixState) {
+            const area = document.getElementById('resultsArea');
+            const d = document.createElement('div');
+            d.className = 'step-card';
+
+            let header = `<div class="step-header"><span>⟿</span> Sıradaki Adım</div>`;
+            let desc = `<div class="step-operation">${operationText}</div>`;
+            let mat = renderMatrixHTML(matrixState);
+
+            d.innerHTML = header + desc + mat;
+            area.appendChild(d);
+        }
+
+        function addFinalResult(text, isError = false, vars = null) {
+            const area = document.getElementById('resultsArea');
+            const d = document.createElement('div');
+
+            if (isError) {
+                d.className = 'step-card final-error';
+                // "Sonsuz" iceriyorsa sonsuz isareti(∞), icermiyorsa(bos kume) bos kume isareti(Ø)
+                d.innerHTML = `<span class="big-icon">${text.includes('Sonsuz') ? '∞' : 'Ø'}</span>${text}`;
+            } else {
+                d.className = 'step-card final-result';
+                d.innerHTML = `<div class="step-header">✨ Çözüm Bulundu!</div>
+                               <div style="font-weight:bold; font-size:1.2rem; color:#16a34a;">${text}</div>`;
+
+                if (vars && vars.length > 0) {
+                    let htmlList = '<ul style="list-style:none; padding:10px 0; margin:0;">';
+                    const alpha = ['x', 'y', 'z', 'w', 'v'];
+                    vars.forEach((v, index) => {
+                        let name = index < alpha.length ? alpha[index] : `x<sub style="font-size:0.7em">${index + 1}</sub>`;
+                        let valDisplay = Number.isInteger(v) ? v : parseFloat(v.toFixed(3));
+                        htmlList += `<li style="margin-bottom:8px; font-size:1.1rem;"><b>${name}</b> = ${valDisplay}</li>`;
+                    });
+                    htmlList += '</ul>';
+                    d.innerHTML += htmlList;
+                }
+            }
+            area.appendChild(d);
+            setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }), 100);
+        }
+
+        function copyMat(m) {
+            return m.map(row => [...row]);
+        }
+
+        // --- 3. GAUSS ALGORITMASI ---
+
+        function startGauss(initialMatrix) {
+            document.getElementById('resultsArea').innerHTML = '';
+
+            let mat = copyMat(initialMatrix);
+            let rows = mat.length;
+            let cols = mat[0].length;
+
+            addStepToUI("Başlangıç Matrisi", mat);
+
+            let h = 0; // pivot satir indexi
+            let k = 0; // pivot sutun indexi
+
+            while (h < rows && k < cols - 1) {
+                // Kolaylık için (İnsan-Benzeri Pivot Seçimi): Önce sütunda 1 veya -1 var mı bak
+                let i_max = h;
+                let foundOne = false;
+                for (let i = h; i < rows; i++) {
+                    if (Math.abs(mat[i][k] - 1) < 1e-10 || Math.abs(mat[i][k] + 1) < 1e-10) {
+                        i_max = i;
+                        foundOne = true;
+                        break;
+                    }
+                }
+
+                // Eger 1 veya -1 yoksa, kesirleri küçültmek için klasik kısmi pivotlama (en büyük değeri seç)
+                if (!foundOne) {
+                    for (let i = h + 1; i < rows; i++) {
+                        if (Math.abs(mat[i][k]) > Math.abs(mat[i_max][k])) {
+                            i_max = i;
+                        }
+                    }
+                }
+
+                if (Math.abs(mat[i_max][k]) < 1e-10) {
+                    // Bu sutun sifir
+                    k++;
+                    continue;
+                }
+
+                // Swap (Yer Degistirme) Yapildiysa Yansit
+                if (i_max !== h) {
+                    let temp = mat[h];
+                    mat[h] = mat[i_max];
+                    mat[i_max] = temp;
+                    addStepToUI(`Satır Değişimi: R<sub>${h + 1}</sub> ↔ R<sub>${i_max + 1}</sub>`, copyMat(mat));
+                }
+
+                // YENI: Pivot Satırını 1 Yap (Normalizasyon)
+                let pivotVal = mat[h][k];
+                if (Math.abs(pivotVal - 1) > 1e-10) { // Eger zaten 1 degilse
+                    for (let j = k; j < cols; j++) {
+                        mat[h][j] = mat[h][j] / pivotVal;
+                    }
+                    // -0.0 gibi absurtluklere karsi
+                    if (Math.abs(mat[h][k]) < 1e-10) mat[h][k] = 0;
+
+                    let pDisplay = Number.isInteger(pivotVal) ? pivotVal : parseFloat(pivotVal.toFixed(3));
+                    let opText = `R<sub>${h + 1}</sub> ⟵ R<sub>${h + 1}</sub> / ${pDisplay} (Pivot 1 Yapıldı)`;
+                    addStepToUI(opText, copyMat(mat));
+                }
+
+                // Alt satırları sıfırlama işlemi
+                for (let i = h + 1; i < rows; i++) {
+                    // Artik pivot hucremiz kesinlikle 1, o yuzden carpani direkt asagidaki deger
+                    let f = mat[i][k];
+                    if (Math.abs(f) > 1e-10) {
+                        for (let j = k; j < cols; j++) {
+                            mat[i][j] = mat[i][j] - mat[h][j] * f;
+                        }
+                        // Kesin sifirlama (floating point sapmalari yuzunden)
+                        mat[i][k] = 0;
+
+                        let fDisplay = Number.isInteger(f) ? f : parseFloat(f.toFixed(2));
+                        let opText = `R<sub>${i + 1}</sub> ⟵ R<sub>${i + 1}</sub> - (${fDisplay}) * R<sub>${h + 1}</sub>`;
+                        addStepToUI(opText, copyMat(mat));
+                    }
+                }
+
+                h++;
+                k++;
+            }
+
+            // --- SISTEMIN DURUM KONTROLU (Sonsuz | Bos Kume | Tek Çözüm) ---
+            checkSolutions(mat, rows, cols);
+        }
+
+        function checkSolutions(mat, rows, cols) {
+            let isNoSolution = false;
+
+            for (let i = rows - 1; i >= 0; i--) {
+                let rowAllZeros = true;
+                for (let j = 0; j < cols - 1; j++) {
+                    if (Math.abs(mat[i][j]) > 1e-10) {
+                        rowAllZeros = false;
+                        break;
+                    }
+                }
+
+                let resultVal = mat[i][cols - 1];
+
+                // Eger 0 = C (C != 0) durumu varsa Tutarsız Sistem (Boş Küme)
+                if (rowAllZeros && Math.abs(resultVal) > 1e-10) {
+                    isNoSolution = true;
+                    break;
+                }
+            }
+
+            if (isNoSolution) {
+                addFinalResult("Sistemin Çözümü Yoktur. (Tutarsız Değerler)", true);
+                return;
+            }
+
+            // Rank Hesapla (Lineer Bagimsiz Satir Sayısı)
+            let rank = 0;
+            for (let i = 0; i < rows; i++) {
+                for (let j = 0; j < cols - 1; j++) {
+                    if (Math.abs(mat[i][j]) > 1e-10) {
+                        rank++;
+                        break;
+                    }
+                }
+            }
+
+            let numVars = cols - 1;
+
+            // Rank değişkenden küçükse %100 sonsuz çözümlüdür.
+            if (rank < numVars) {
+                addFinalResult("Sistemin Sonsuz Çözümü Vardır. (Serbest Değişkenler)", true);
+                return;
+            }
+
+            // Tam Çözüm Varsa(Back Substitution - Geri Yerine Koyma)
+            let solutions = new Array(numVars).fill(0);
+            for (let i = rows - 1; i >= 0; i--) {
+                // İlk sifir olmayan degeri (pivotu) pCols'da bul
+                let pivotCol = -1;
+                for (let j = 0; j < numVars; j++) {
+                    if (Math.abs(mat[i][j]) > 1e-10) {
+                        pivotCol = j;
+                        break;
+                    }
+                }
+
+                if (pivotCol !== -1) {
+                    let sum = 0;
+                    for (let j = pivotCol + 1; j < numVars; j++) {
+                        sum += mat[i][j] * solutions[j];
+                    }
+                    solutions[pivotCol] = (mat[i][cols - 1] - sum) / mat[i][pivotCol];
+                    if (Math.abs(solutions[pivotCol]) < 1e-10) solutions[pivotCol] = 0;
+                }
+            }
+
+            addFinalResult("Sistem Başarıyla Çözüldü!", false, solutions);
+        }
+    </script>
+</body>
+
+</html>

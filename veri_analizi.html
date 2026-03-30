@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tablo ve Grafik Analizi</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .glass-container {
+            background: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            padding: 30px;
+            width: 100%;
+            max-width: 900px;
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 30px;
+            box-sizing: border-box;
+        }
+
+        @media (max-width: 768px) {
+            .glass-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        h2 {
+            color: #4a4a4a;
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+
+        /* Panel Styles */
+        .panel {
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Input Section */
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            outline: none;
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.05);
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            color: white;
+            transition: all 0.3s;
+        }
+
+        .btn-add {
+            background-color: #9c27b0;
+        }
+
+        .btn-add:hover {
+            background-color: #7b1fa2;
+            transform: translateY(-2px);
+        }
+
+        .btn-analyze {
+            background-color: #e91e63;
+            flex: 2;
+            margin-top: 0;
+            font-size: 16px;
+            padding: 15px;
+        }
+
+        .btn-analyze:hover {
+            background-color: #c2185b;
+            transform: translateY(-2px);
+        }
+
+        .btn-clear {
+            background-color: #f44336;
+            flex: 1;
+            font-size: 16px;
+            padding: 15px;
+        }
+
+        .btn-clear:hover {
+            background-color: #d32f2f;
+            transform: translateY(-2px);
+        }
+
+        /* Excel Table Styles */
+        .excel-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            border-radius: 6px;
+            overflow: hidden;
+            table-layout: fixed;
+        }
+
+        .table-container {
+            max-height: 250px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            flex-grow: 1;
+            border-radius: 6px;
+            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.05);
+            background: rgba(255, 255, 255, 0.7);
+        }
+
+        .excel-table th,
+        .excel-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+
+        .excel-table th {
+            background-color: #f3e5f5;
+            /* Light purple header */
+            color: #4a4a4a;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .excel-table .row-header {
+            background-color: #f3f3f3;
+            color: #777;
+            font-weight: bold;
+            width: 40px;
+            position: sticky;
+            left: 0;
+            z-index: 5;
+        }
+
+        .excel-table input {
+            width: 100%;
+            border: none;
+            padding: 6px;
+            box-sizing: border-box;
+            background: transparent;
+            text-align: right;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .excel-table input:focus {
+            background: #fdf2f8;
+            /* Very light pink on focus */
+            outline: 2px solid #e91e63;
+        }
+
+        /* Stats Section */
+        .stats-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px 15px;
+            border-radius: 12px;
+            flex: 1;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            min-width: 80px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #e91e63;
+            margin-top: 8px;
+            line-height: 1;
+        }
+
+        .stat-title {
+            font-size: 12px;
+            color: #777;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Chart Section */
+        .chart-container-outer {
+            flex-grow: 1;
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 12px;
+            padding: 20px;
+            position: relative;
+        }
+
+        .chart-wrapper {
+            height: 250px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-evenly;
+            gap: 15px;
+            border-bottom: 3px solid #9c27b0;
+            overflow-x: auto;
+            position: relative;
+            padding-top: 30px;
+            /* Degerler icin yer */
+        }
+
+        .bar-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            height: 100%;
+            flex: 1;
+            max-width: 60px;
+            min-width: 40px;
+        }
+
+        .bar {
+            width: 100%;
+            background: linear-gradient(to top, #9c27b0, #e91e63);
+            border-radius: 6px 6px 0 0;
+            transition: height 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            box-shadow: 0 0 10px rgba(233, 30, 99, 0.2);
+            /* Animasyon başlangıcı için height 0 set edilecek */
+        }
+
+        .bar:hover {
+            filter: brightness(1.1);
+        }
+
+        .bar-value {
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #4a4a4a;
+            font-size: 14px;
+            background: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            z-index: 2;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(156, 39, 176, 0.5);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(156, 39, 176, 0.8);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="glass-container">
+        <!-- Left Panel: Data Entry -->
+        <div class="panel">
+            <h2>Veri Girişi</h2>
+            <div class="table-container">
+                <table class="excel-table" id="dataTable">
+                    <thead>
+                        <tr>
+                            <th class="row-header"></th>
+                            <th>A</th>
+                            <th>B</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <!-- Excel rows will be generated here -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="action-buttons">
+                <button class="btn-analyze" id="btnAnalyze">Tabloyu Analiz Et</button>
+                <button class="btn-clear" id="btnClear">Hepsini Sil</button>
+            </div>
+        </div>
+
+        <!-- Right Panel: Data, Stats and Charts -->
+        <div class="panel">
+            <h2>İstatistik ve Grafik</h2>
+
+            <div class="stats-container">
+                <div class="stat-card">
+                    <div class="stat-title">Veri Sayısı</div>
+                    <div class="stat-value" id="statCount">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">Maksimum</div>
+                    <div class="stat-value" id="statMax">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">Ortalama</div>
+                    <div class="stat-value" id="statAvg">0</div>
+                </div>
+            </div>
+
+            <div class="chart-container-outer">
+                <div class="chart-wrapper" id="chartContainer">
+                    <!-- Sütun grafiği buraya çizilecek -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const tableBody = document.getElementById('tableBody');
+        const btnAnalyze = document.getElementById('btnAnalyze');
+        const btnClear = document.getElementById('btnClear');
+
+        const statCount = document.getElementById('statCount');
+        const statMax = document.getElementById('statMax');
+        const statAvg = document.getElementById('statAvg');
+        const chartContainer = document.getElementById('chartContainer');
+
+        let currentRowCount = 20; // Baslangicta 20 satir
+        const COLS = 2;
+
+        // Initialize Excel Grid
+        function initGrid() {
+            tableBody.innerHTML = '';
+            for (let r = 1; r <= currentRowCount; r++) {
+                addRow(r);
+            }
+        }
+
+        // Tek bir satir ekleyen fonksiyon
+        function addRow(rowIndex) {
+            const tr = document.createElement('tr');
+
+            // Row Header (1, 2, 3...)
+            const th = document.createElement('td');
+            th.className = 'row-header';
+            th.textContent = rowIndex;
+            tr.appendChild(th);
+
+            for (let c = 0; c < COLS; c++) {
+                const td = document.createElement('td');
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'cell-input';
+
+                // Degisiklik yapildiginda satir ekleme durumunu kontrol et
+                input.addEventListener('input', function () {
+                    checkAndAddRow(rowIndex);
+                });
+
+                td.appendChild(input);
+                tr.appendChild(td);
+            }
+            tableBody.appendChild(tr);
+        }
+
+        // Eger son satira yazi yaziliyorsa otomatik yeni satir ekle
+        function checkAndAddRow(index) {
+            if (index === currentRowCount) {
+                currentRowCount++;
+                addRow(currentRowCount);
+
+                // Ihtiyaca bagli olarak scroll'u asagi kaydirabiliriz
+                const tableContainer = document.querySelector('.table-container');
+                tableContainer.scrollTop = tableContainer.scrollHeight;
+            }
+        }
+
+        // Setup Events
+        btnAnalyze.addEventListener('click', analyzeData);
+        btnClear.addEventListener('click', clearAll);
+
+        // Run initially
+        initGrid();
+
+        // Functions
+        function clearAll() {
+            // Re-initialize grid and values
+            currentRowCount = 20;
+            initGrid();
+
+            statCount.textContent = '0';
+            statMax.textContent = '0';
+            statAvg.textContent = '0';
+            chartContainer.innerHTML = '';
+        }
+
+        function analyzeData() {
+            // 1. Grid icindeki tum verileri topla ve icinden sadece sayilari al
+            const inputs = document.querySelectorAll('.cell-input');
+            const numberData = [];
+
+            inputs.forEach(input => {
+                const val = input.value.trim();
+                if (val !== "") {
+                    const num = Number(val);
+                    if (!isNaN(num)) {
+                        numberData.push(num);
+                    }
+                }
+            });
+
+            if (numberData.length === 0) {
+                alert("Grafiğin çizilmesi için lütfen listeye en az bir adet SAYIsal değer ekleyiniz!");
+                return;
+            }
+
+            // 2. Istatistikleri hesapla
+            const count = numberData.length;
+            const max = Math.max(...numberData);
+            // Reduce metoduyla toplam bulma
+            const sum = numberData.reduce((acc, curr) => acc + curr, 0);
+            const avg = sum / count;
+
+            // Ekrana Degerleri Yazdir (Virgulden sonra 2 hane)
+            statCount.textContent = count;
+            statMax.textContent = max;
+            statAvg.textContent = Number.isInteger(avg) ? avg : avg.toFixed(2);
+
+            // 3. Grafigi ciz
+            renderChart(numberData, max);
+        }
+
+        function renderChart(dataArr, maxValue) {
+            // Eski grafigi temizle
+            chartContainer.innerHTML = '';
+
+            // Eger negatif sayilarda isin icine giriyorsa isler degisir ama temel durumdaki "max = tavan" formulu:
+            // Her bar'in yuksekligi = (deger / max) * 100
+            // Eger hepsi 0 ve altindaysa, gorunurluk adina alt limit belirleyelim
+            const baseMax = maxValue > 0 ? maxValue : 1;
+
+            dataArr.forEach((val) => {
+                const group = document.createElement('div');
+                group.className = 'bar-group';
+
+                const valueText = document.createElement('div');
+                valueText.className = 'bar-value';
+                valueText.textContent = val;
+
+                const bar = document.createElement('div');
+                bar.className = 'bar';
+
+                // Yukseklik yuzdesi hesabi
+                let heightPercent = (val / baseMax) * 100;
+
+                // Eger 0 veya eksi bir sey gelirse grafikte gorunmesini %1 civarinda bir seviyede asgari tutabiliriz
+                if (heightPercent < 1 && val >= 0) {
+                    heightPercent = (val === 0) ? 1 : heightPercent;
+                } else if (heightPercent < 0) {
+                    heightPercent = 0; // Negatiflere karsi onlem
+                }
+
+                // Animasyon oncesi sifirla
+                bar.style.height = '0%';
+
+                group.appendChild(valueText);
+                group.appendChild(bar);
+                chartContainer.appendChild(group);
+
+                // Cizildikten kisa sure sonra gercek yukseklik atanir (CSS Transition effect)
+                requestAnimationFrame(() => {
+                    setTimeout(() => {
+                        bar.style.height = heightPercent + '%';
+                    }, 10);
+                });
+            });
+        }
+    </script>
+
+</body>
+
+</html>
