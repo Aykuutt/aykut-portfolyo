@@ -362,7 +362,9 @@
                     placeholder="x + y + z = 6&#10;2x + 5y - z = -4&#10;2x + y - z = 2"></textarea>
 
                 <div class="btn-group">
-                    <button class="btn-primary" onclick="solveFromEquations()">Adım Adım Çöz</button>
+                    <button class="btn-primary" onclick="solveFromEquations('gauss')">Gauss Çöz</button>
+                    <button class="btn-primary" onclick="solveFromEquations('jordan')"
+                        style="background: var(--secondary);">Gauss-Jordan Çöz</button>
                     <button class="btn-outline"
                         onclick="document.getElementById('equationInput').value=''">Temizle</button>
                 </div>
@@ -387,7 +389,11 @@
                 </div>
 
                 <div class="btn-group">
-                    <button class="btn-primary" onclick="solveFromGrid()">Adım Adım Çöz</button>
+                    <button class="btn-primary" onclick="solveFromGrid('gauss')">Gauss Çöz</button>
+                    <button class="btn-primary" onclick="solveFromGrid('jordan')"
+                        style="background: var(--secondary);">Gauss-Jordan Çöz</button>
+                    <button class="btn-secondary" onclick="calculateInverseFromGrid()"
+                        style="background: var(--success); color: white;">Matris Tersini Bul</button>
                     <button class="btn-outline" onclick="fillRandomMatrix()">Rastgele Doldur</button>
                 </div>
             </div>
@@ -446,11 +452,11 @@
         // --- 1. VERI ALMA ISLEMLERI ---
 
         // TAB 1: Denklemlerden Matris Uretme
-        function solveFromEquations() {
+        function solveFromEquations(method = 'gauss') {
             const text = document.getElementById('equationInput').value;
             const matrix = parseEquationsToMatrix(text);
             if (!matrix) return;
-            startGauss(matrix);
+            startSolving(matrix, method);
         }
 
         function parseEquationsToMatrix(text) {
@@ -523,26 +529,48 @@
         }
 
         // TAB 2: Grid'den Matris Çekme
-        function solveFromGrid() {
+        function solveFromGrid(method = 'gauss') {
             const rows = parseInt(document.getElementById('rowCount').value);
-            const cols = parseInt(document.getElementById('varCount').value) + 1;
-            const matrix = [];
+            const vars = parseInt(document.getElementById('varCount').value);
+            const cols = vars + 1;
+            const matrix = getMatrixFromGrid(rows, cols);
+            if (!matrix) return;
 
+            startSolving(matrix, method);
+        }
+
+        function calculateInverseFromGrid() {
+            const rows = parseInt(document.getElementById('rowCount').value);
+            const vars = parseInt(document.getElementById('varCount').value);
+
+            if (rows !== vars) {
+                alert("Matrisin tersini bulmak için kare matris (Satır = Sütun) olmalıdır!");
+                return;
+            }
+
+            const matrix = getMatrixFromGrid(rows, vars);
+            if (!matrix) return;
+
+            startInverse(matrix);
+        }
+
+        function getMatrixFromGrid(rows, cols) {
+            const matrix = [];
             for (let r = 0; r < rows; r++) {
                 const rowArr = [];
                 for (let c = 0; c < cols; c++) {
                     const input = document.querySelector(`.matrix-cell[data-row="${r}"][data-col="${c}"]`);
+                    if (!input) continue;
                     const val = parseFloat(input.value);
                     if (isNaN(val)) {
                         alert(`Lütfen ${r + 1}. satır ${c + 1}. sütuna geçerli bir sayı girin.`);
-                        return;
+                        return null;
                     }
                     rowArr.push(val);
                 }
                 matrix.push(rowArr);
             }
-
-            startGauss(matrix);
+            return matrix;
         }
 
         // --- 2. UI YARDIMCI METOTLARI ---
@@ -616,7 +644,12 @@
 
         // --- 3. GAUSS ALGORITMASI ---
 
-        function startGauss(initialMatrix) {
+        /**
+         * Çözüm işlemini başlatan ana fonksiyon.
+         * @param {Array} initialMatrix - Başlangıç matrisi
+         * @param {string} method - 'gauss' (Üst Üçgen) veya 'jordan' (Birim Matris - RREF)
+         */
+        function startSolving(initialMatrix, method = 'gauss') {
             document.getElementById('resultsArea').innerHTML = '';
 
             let mat = copyMat(initialMatrix);
@@ -628,34 +661,23 @@
             let h = 0; // pivot satir indexi
             let k = 0; // pivot sutun indexi
 
+            // --- İLERİ ELEME (FORWARD ELIMINATION) ---
             while (h < rows && k < cols - 1) {
-                // Kolaylık için (İnsan-Benzeri Pivot Seçimi): Önce sütunda 1 veya -1 var mı bak
+                // Pivot seçimi: Sütunda mutlak değerce en büyük olanı bul (Kısmi Pivotlama)
                 let i_max = h;
-                let foundOne = false;
-                for (let i = h; i < rows; i++) {
-                    if (Math.abs(mat[i][k] - 1) < 1e-10 || Math.abs(mat[i][k] + 1) < 1e-10) {
+                for (let i = h + 1; i < rows; i++) {
+                    if (Math.abs(mat[i][k]) > Math.abs(mat[i_max][k])) {
                         i_max = i;
-                        foundOne = true;
-                        break;
                     }
                 }
 
-                // Eger 1 veya -1 yoksa, kesirleri küçültmek için klasik kısmi pivotlama (en büyük değeri seç)
-                if (!foundOne) {
-                    for (let i = h + 1; i < rows; i++) {
-                        if (Math.abs(mat[i][k]) > Math.abs(mat[i_max][k])) {
-                            i_max = i;
-                        }
-                    }
-                }
-
+                // Eğer en büyük değer 0 ise, bu sütun tamamen 0 demektir, bir sonraki sütuna geç
                 if (Math.abs(mat[i_max][k]) < 1e-10) {
-                    // Bu sutun sifir
                     k++;
                     continue;
                 }
 
-                // Swap (Yer Degistirme) Yapildiysa Yansit
+                // Satır değişimi (Swap) gerekliyse yap
                 if (i_max !== h) {
                     let temp = mat[h];
                     mat[h] = mat[i_max];
@@ -663,34 +685,29 @@
                     addStepToUI(`Satır Değişimi: R<sub>${h + 1}</sub> ↔ R<sub>${i_max + 1}</sub>`, copyMat(mat));
                 }
 
-                // YENI: Pivot Satırını 1 Yap (Normalizasyon)
+                // Pivot Elemanını 1 Yap (Normalizasyon)
                 let pivotVal = mat[h][k];
-                if (Math.abs(pivotVal - 1) > 1e-10) { // Eger zaten 1 degilse
+                if (Math.abs(pivotVal - 1) > 1e-10) {
                     for (let j = k; j < cols; j++) {
                         mat[h][j] = mat[h][j] / pivotVal;
                     }
-                    // -0.0 gibi absurtluklere karsi
                     if (Math.abs(mat[h][k]) < 1e-10) mat[h][k] = 0;
 
                     let pDisplay = Number.isInteger(pivotVal) ? pivotVal : parseFloat(pivotVal.toFixed(3));
-                    let opText = `R<sub>${h + 1}</sub> ⟵ R<sub>${h + 1}</sub> / ${pDisplay} (Pivot 1 Yapıldı)`;
-                    addStepToUI(opText, copyMat(mat));
+                    addStepToUI(`Pivot Normalizasyonu: R<sub>${h + 1}</sub> ⟵ R<sub>${h + 1}</sub> / ${pDisplay}`, copyMat(mat));
                 }
 
-                // Alt satırları sıfırlama işlemi
+                // Alt satırları sıfırlama (Üst üçgen forma getirme)
                 for (let i = h + 1; i < rows; i++) {
-                    // Artik pivot hucremiz kesinlikle 1, o yuzden carpani direkt asagidaki deger
                     let f = mat[i][k];
                     if (Math.abs(f) > 1e-10) {
                         for (let j = k; j < cols; j++) {
                             mat[i][j] = mat[i][j] - mat[h][j] * f;
                         }
-                        // Kesin sifirlama (floating point sapmalari yuzunden)
-                        mat[i][k] = 0;
+                        mat[i][k] = 0; // Tam sıfır olduğundan emin ol
 
-                        let fDisplay = Number.isInteger(f) ? f : parseFloat(f.toFixed(2));
-                        let opText = `R<sub>${i + 1}</sub> ⟵ R<sub>${i + 1}</sub> - (${fDisplay}) * R<sub>${h + 1}</sub>`;
-                        addStepToUI(opText, copyMat(mat));
+                        let fDisplay = Number.isInteger(f) ? f : parseFloat(f.toFixed(3));
+                        addStepToUI(`Altı Sıfırlama: R<sub>${i + 1}</sub> ⟵ R<sub>${i + 1}</sub> - (${fDisplay}) * R<sub>${h + 1}</sub>`, copyMat(mat));
                     }
                 }
 
@@ -698,26 +715,132 @@
                 k++;
             }
 
-            // --- SISTEMIN DURUM KONTROLU (Sonsuz | Bos Kume | Tek Çözüm) ---
+            // --- GERİ ELEME (BACK ELIMINATION / GAUSS-JORDAN) ---
+            if (method === 'jordan') {
+                // En alt pivot satırından yukarı doğru çık
+                for (let i = rows - 1; i >= 0; i--) {
+                    // Bu satırdaki pivotu (ilk 1 olan yer) bul
+                    let pivotCol = -1;
+                    for (let j = 0; j < cols - 1; j++) {
+                        if (Math.abs(mat[i][j] - 1) < 1e-10) {
+                            pivotCol = j;
+                            break;
+                        }
+                    }
+
+                    if (pivotCol !== -1) {
+                        // Üstündeki satırları sıfırla
+                        for (let upper = i - 1; upper >= 0; upper--) {
+                            let f = mat[upper][pivotCol];
+                            if (Math.abs(f) > 1e-10) {
+                                for (let j = pivotCol; j < cols; j++) {
+                                    mat[upper][j] = mat[upper][j] - mat[i][j] * f;
+                                }
+                                mat[upper][pivotCol] = 0; // Kesin sıfırla
+
+                                let fDisplay = Number.isInteger(f) ? f : parseFloat(f.toFixed(3));
+                                addStepToUI(`Üstü Sıfırlama: R<sub>${upper + 1}</sub> ⟵ R<sub>${upper + 1}</sub> - (${fDisplay}) * R<sub>${i + 1}</sub>`, copyMat(mat));
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Sonuçları kontrol et ve yazdır
             checkSolutions(mat, rows, cols);
+        }
+
+        /**
+         * [A | I] Yöntemiyle Matris Tersini Hesaplar
+         */
+        function startInverse(initialMatrix) {
+            document.getElementById('resultsArea').innerHTML = '';
+            let n = initialMatrix.length;
+
+            // 1. Genişletilmiş Matris Oluştur: [A | I]
+            let mat = initialMatrix.map((row, i) => {
+                let identityRow = new Array(n).fill(0);
+                identityRow[i] = 1;
+                return [...row, ...identityRow];
+            });
+
+            addStepToUI("Başlangıç Genişletilmiş Matrisi [A | I]", copyMat(mat));
+
+            let rows = n;
+            let cols = 2 * n; // A ve I yanyana
+
+            // 2. Gauss-Jordan Uygula (A kısmını Birim Matris yapmaya çalış)
+            for (let i = 0; i < n; i++) {
+                // Pivot seçimi
+                let pivotRow = i;
+                for (let j = i + 1; j < n; j++) {
+                    if (Math.abs(mat[j][i]) > Math.abs(mat[pivotRow][i])) {
+                        pivotRow = j;
+                    }
+                }
+
+                // Eğer pivot 0 ise matris tersinmezdir (Singular)
+                if (Math.abs(mat[pivotRow][i]) < 1e-10) {
+                    addFinalResult("Matrisin Tersini Almak Mümkün Değildir! (Determinant 0 olabilir)", true);
+                    return;
+                }
+
+                // Satır takası
+                if (pivotRow !== i) {
+                    [mat[i], mat[pivotRow]] = [mat[pivotRow], mat[i]];
+                    addStepToUI(`Satır Takası: R<sub>${i + 1}</sub> ↔ R<sub>${pivotRow + 1}</sub>`, copyMat(mat));
+                }
+
+                // Pivotu 1 Yap
+                let pivotVal = mat[i][i];
+                for (let j = i; j < cols; j++) {
+                    mat[i][j] /= pivotVal;
+                }
+                addStepToUI(`Normalizasyon: R<sub>${i + 1}</sub> / ${pivotVal.toFixed(2)}`, copyMat(mat));
+
+                // Diğer satırları sıfırla (Hem alt hem üst)
+                for (let k = 0; k < n; k++) {
+                    if (k !== i) {
+                        let factor = mat[k][i];
+                        if (Math.abs(factor) > 1e-10) {
+                            for (let j = i; j < cols; j++) {
+                                mat[k][j] -= factor * mat[i][j];
+                            }
+                            mat[k][i] = 0; // Kesin sıfır
+                            addStepToUI(`Sıfırlama: R<sub>${k + 1}</sub> ⟵ R<sub>${k + 1}</sub> - (${factor.toFixed(2)}) * R<sub>${i + 1}</sub>`, copyMat(mat));
+                        }
+                    }
+                }
+            }
+
+            // 3. Sağ Tarafı (A-1) Çek
+            let inverse = mat.map(row => row.slice(n));
+
+            const area = document.getElementById('resultsArea');
+            const d = document.createElement('div');
+            d.className = 'step-card final-result';
+            d.innerHTML = `<div class="step-header">✨ Matris Tersi Bulundu!</div>
+                           <div style="margin-bottom:15px;">Sol taraf <b>I</b> (Birim Matris) oldu, sağ taraf ise <b>A<sup>-1</sup></b>:</div>
+                           ${renderMatrixHTML(inverse)}`;
+            area.appendChild(d);
+            setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }), 100);
         }
 
         function checkSolutions(mat, rows, cols) {
             let isNoSolution = false;
+            let numVars = cols - 1;
 
-            for (let i = rows - 1; i >= 0; i--) {
+            // Sıfır satırı ve tutarsızlık kontrolü
+            for (let i = 0; i < rows; i++) {
                 let rowAllZeros = true;
-                for (let j = 0; j < cols - 1; j++) {
+                for (let j = 0; j < numVars; j++) {
                     if (Math.abs(mat[i][j]) > 1e-10) {
                         rowAllZeros = false;
                         break;
                     }
                 }
 
-                let resultVal = mat[i][cols - 1];
-
-                // Eger 0 = C (C != 0) durumu varsa Tutarsız Sistem (Boş Küme)
-                if (rowAllZeros && Math.abs(resultVal) > 1e-10) {
+                if (rowAllZeros && Math.abs(mat[i][cols - 1]) > 1e-10) {
                     isNoSolution = true;
                     break;
                 }
@@ -728,29 +851,29 @@
                 return;
             }
 
-            // Rank Hesapla (Lineer Bagimsiz Satir Sayısı)
+            // Rank hesaplama
             let rank = 0;
+            let pivotCols = [];
             for (let i = 0; i < rows; i++) {
-                for (let j = 0; j < cols - 1; j++) {
+                for (let j = 0; j < numVars; j++) {
                     if (Math.abs(mat[i][j]) > 1e-10) {
                         rank++;
+                        pivotCols.push(j);
                         break;
                     }
                 }
             }
 
-            let numVars = cols - 1;
-
-            // Rank değişkenden küçükse %100 sonsuz çözümlüdür.
             if (rank < numVars) {
-                addFinalResult("Sistemin Sonsuz Çözümü Vardır. (Serbest Değişkenler)", true);
+                addFinalResult("Sistemin Sonsuz Çözümü Vardır. (Serbest Değişken Sayısı: " + (numVars - rank) + ")", true);
                 return;
             }
 
-            // Tam Çözüm Varsa(Back Substitution - Geri Yerine Koyma)
+            // Çözümleri bul
             let solutions = new Array(numVars).fill(0);
+            // Zaten Gauss-Jordan (RREF) formundaysak direkt son sütun değerleridir
+            // Ama her ihtimale karşı geri yerine koyma (back-substitution) mantığını işletiyoruz
             for (let i = rows - 1; i >= 0; i--) {
-                // İlk sifir olmayan degeri (pivotu) pCols'da bul
                 let pivotCol = -1;
                 for (let j = 0; j < numVars; j++) {
                     if (Math.abs(mat[i][j]) > 1e-10) {
@@ -765,7 +888,6 @@
                         sum += mat[i][j] * solutions[j];
                     }
                     solutions[pivotCol] = (mat[i][cols - 1] - sum) / mat[i][pivotCol];
-                    if (Math.abs(solutions[pivotCol]) < 1e-10) solutions[pivotCol] = 0;
                 }
             }
 
