@@ -365,6 +365,8 @@
                     <button class="btn-primary" onclick="solveFromEquations('gauss')">Gauss Çöz</button>
                     <button class="btn-primary" onclick="solveFromEquations('jordan')"
                         style="background: var(--secondary);">Gauss-Jordan Çöz</button>
+                    <button class="btn-secondary" onclick="calculateInverseFromEquations()"
+                        style="background: var(--success); color: white;">Matris Tersini Bul</button>
                     <button class="btn-outline"
                         onclick="document.getElementById('equationInput').value=''">Temizle</button>
                 </div>
@@ -457,6 +459,25 @@
             const matrix = parseEquationsToMatrix(text);
             if (!matrix) return;
             startSolving(matrix, method);
+        }
+
+        function calculateInverseFromEquations() {
+            const text = document.getElementById('equationInput').value;
+            // parseEquationsToMatrix full matrix [A|B] döndürür
+            const fullMatrix = parseEquationsToMatrix(text);
+            if (!fullMatrix) return;
+
+            const n = fullMatrix.length;
+            const vars = fullMatrix[0].length - 1;
+
+            if (n !== vars) {
+                alert(`Matrisin tersini bulmak için kare matris olmalıdır! \n(Denklem Sayısı: ${n}, Değişken Sayısı: ${vars})`);
+                return;
+            }
+
+            // Sadece A matrisini (katsayılar) al
+            const matrixA = fullMatrix.map(row => row.slice(0, n));
+            startInverse(matrixA);
         }
 
         function parseEquationsToMatrix(text) {
