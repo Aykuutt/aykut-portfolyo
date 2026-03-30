@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Veri Bilimi Portföyü</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;600;700&display=swap"
+        rel="stylesheet" />
+
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --accent1: #6c63ff;
+            --accent2: #00d4aa;
+            --accent3: #ff6b9d;
+            --bg-dark: #060b1a;
+            --glass-bg: rgba(255, 255, 255, 0.045);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --text-primary: #e8eeff;
+            --text-muted: rgba(200, 210, 255, 0.55);
+        }
+
+        html,
+        body {
+            height: 100%;
+            width: 100%;
+            overflow-x: hidden;
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            cursor: none !important;
+        }
+
+        a,
+        button,
+        [role="button"],
+        .btn,
+        .drawer-link,
+        .skill-pill,
+        .drawer-handle {
+            cursor: none !important;
+        }
+
+
+        /* ── Custom emoji cursor ── */
+        #custom-cursor {
+            position: fixed;
+            pointer-events: none;
+            z-index: 99999;
+            font-size: 1.5rem;
+            line-height: 1;
+            user-select: none;
+            transform: translate(-6px, -26px);
+            filter: drop-shadow(0 2px 6px rgba(108, 99, 255, 0.55));
+            transition: font-size 0.18s cubic-bezier(.22, .68, 0, 1.4);
+        }
+
+        #custom-cursor.big {
+            font-size: 2.6rem;
+            filter: drop-shadow(0 4px 12px rgba(108, 99, 255, 0.8));
+        }
+
+        /* ── Animated gradient background ── */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 80% 70% at 20% 10%, rgba(108, 99, 255, 0.18) 0%, transparent 60%),
+                radial-gradient(ellipse 55% 55% at 80% 80%, rgba(255, 185, 30, 0.10) 0%, transparent 55%),
+                radial-gradient(ellipse 50% 55% at 70% 20%, rgba(255, 140, 0, 0.07) 0%, transparent 55%),
+                radial-gradient(ellipse 40% 40% at 30% 70%, rgba(255, 107, 157, 0.08) 0%, transparent 50%),
+                linear-gradient(135deg, #07080f 0%, #0d1226 50%, #0a0a14 100%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ── Canvas for particles ── */
+        #particle-canvas {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* ── Mouse light orb ── */
+        #cursor-light {
+            position: fixed;
+            width: 380px;
+            height: 380px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(108, 99, 255, 0.18) 0%, transparent 70%);
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 2;
+            transition: opacity 0.3s;
+            mix-blend-mode: screen;
+        }
+
+        /* ── Main layout ── */
+        main {
+            position: relative;
+            z-index: 3;
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem 1.5rem 4rem;
+            gap: 2.2rem;
+        }
+
+        /* ── Hero card ── */
+        .hero-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(22px) saturate(180%);
+            -webkit-backdrop-filter: blur(22px) saturate(180%);
+            border-radius: 28px;
+            padding: 3.2rem 3rem 2.6rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.6rem;
+            max-width: 480px;
+            width: 100%;
+            box-shadow: 0 8px 60px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.10);
+            animation: fadeUp 0.9s cubic-bezier(.22, .68, 0, 1.2) both;
+        }
+
+        /* ── Avatar ── */
+        .avatar-wrapper {
+            position: relative;
+            width: 148px;
+            height: 148px;
+        }
+
+        .avatar-ring {
+            position: absolute;
+            inset: -5px;
+            border-radius: 50%;
+            background: conic-gradient(var(--accent1), var(--accent2), var(--accent3), var(--accent1));
+            animation: spin 5s linear infinite;
+        }
+
+        .avatar-ring::after {
+            content: '';
+            position: absolute;
+            inset: 3px;
+            border-radius: 50%;
+            background: #0d1433;
+        }
+
+        .avatar-img {
+            position: absolute;
+            inset: 4px;
+            border-radius: 50%;
+            object-fit: cover;
+            width: calc(100% - 8px);
+            height: calc(100% - 8px);
+            z-index: 1;
+            background: linear-gradient(135deg, #1a2040, #2a1050);
+        }
+
+        /* Fallback icon if image missing */
+        .avatar-fallback {
+            position: absolute;
+            inset: 4px;
+            border-radius: 50%;
+            z-index: 1;
+            background: linear-gradient(135deg, #1e1460, #0f3052);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3.4rem;
+        }
+
+        /* ── Tags ── */
+        .tags {
+            display: flex;
+            gap: 0.55rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .tag {
+            font-size: 0.68rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 0.26rem 0.85rem;
+            border-radius: 50px;
+            border: 1px solid;
+        }
+
+        .tag.purple {
+            color: var(--accent1);
+            border-color: rgba(108, 99, 255, 0.45);
+            background: rgba(108, 99, 255, 0.10);
+        }
+
+        .tag.teal {
+            color: var(--accent2);
+            border-color: rgba(0, 212, 170, 0.45);
+            background: rgba(0, 212, 170, 0.10);
+        }
+
+        .tag.pink {
+            color: var(--accent3);
+            border-color: rgba(255, 107, 157, 0.45);
+            background: rgba(255, 107, 157, 0.10);
+        }
+
+        /* ── Heading ── */
+        .hero-card h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+            text-align: center;
+            background: linear-gradient(120deg, #c8c0ff, #6c63ff 40%, #00d4aa 80%, #fff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.25;
+        }
+
+        .hero-card p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            text-align: center;
+            line-height: 1.7;
+            max-width: 340px;
+        }
+
+        /* ── Divider ── */
+        .divider {
+            width: 60%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--glass-border), transparent);
+        }
+
+        /* ── Action buttons ── */
+        .btn-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 0.85rem;
+            width: 100%;
+            max-width: 480px;
+            animation: fadeUp 1s 0.2s cubic-bezier(.22, .68, 0, 1.2) both;
+        }
+
+        .btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.55rem;
+            padding: 1.2rem 0.7rem;
+            border-radius: 18px;
+            border: 1px solid var(--glass-border);
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 0.78rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            cursor: pointer;
+            transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease, background 0.22s ease;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            transition: opacity 0.25s;
+        }
+
+        .btn-renk::before {
+            background: linear-gradient(135deg, rgba(108, 99, 255, 0.20), transparent);
+        }
+
+        .btn-grafik::before {
+            background: linear-gradient(135deg, rgba(0, 212, 170, 0.20), transparent);
+        }
+
+        .btn-data::before {
+            background: linear-gradient(135deg, rgba(255, 107, 157, 0.20), transparent);
+        }
+
+        .btn:hover {
+            transform: translateY(-5px) scale(1.03);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+        }
+
+        .btn:hover::before {
+            opacity: 1;
+        }
+
+        .btn-renk:hover {
+            border-color: rgba(108, 99, 255, 0.55);
+        }
+
+        .btn-grafik:hover {
+            border-color: rgba(0, 212, 170, 0.55);
+        }
+
+        .btn-data:hover {
+            border-color: rgba(255, 107, 157, 0.55);
+        }
+
+        .btn-icon {
+            font-size: 1.7rem;
+            line-height: 1;
+        }
+
+        /* ── Skills ── */
+        .skills-wrap {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.65rem;
+            justify-content: center;
+            max-width: 480px;
+            animation: fadeUp 1s 0.35s cubic-bezier(.22, .68, 0, 1.2) both;
+        }
+
+        .skill-pill {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.45rem 1rem;
+            border-radius: 50px;
+            border: 1px solid var(--glass-border);
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+            cursor: default;
+        }
+
+        .skill-pill:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+        }
+
+        .skill-pill.p1:hover {
+            border-color: rgba(108, 99, 255, 0.6);
+        }
+
+        .skill-pill.p2:hover {
+            border-color: rgba(0, 212, 170, 0.6);
+        }
+
+        .skill-pill.p3:hover {
+            border-color: rgba(255, 107, 157, 0.6);
+        }
+
+        .skill-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .p1 .skill-dot {
+            background: var(--accent1);
+            box-shadow: 0 0 6px var(--accent1);
+        }
+
+        .p2 .skill-dot {
+            background: var(--accent2);
+            box-shadow: 0 0 6px var(--accent2);
+        }
+
+        .p3 .skill-dot {
+            background: var(--accent3);
+            box-shadow: 0 0 6px var(--accent3);
+        }
+
+        /* ── In-page Overlay ── */
+        .ov-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(4, 8, 24, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.35s ease;
+        }
+
+        .ov-backdrop.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .ov-box {
+            position: relative;
+            width: min(92vw, 1000px);
+            height: min(88vh, 700px);
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            background: #080e22;
+            overflow: hidden;
+            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.7);
+            transform: scale(0.92);
+            transition: transform 0.35s cubic-bezier(.22, .68, 0, 1.2);
+        }
+
+        .ov-backdrop.active .ov-box {
+            transform: scale(1);
+        }
+
+        .ov-close {
+            position: absolute;
+            top: 14px;
+            right: 16px;
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--glass-border);
+            color: var(--text-primary);
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .ov-close:hover {
+            background: rgba(255, 255, 255, 0.18);
+        }
+
+        .ov-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
+        }
+
+        .ov-img-wrap {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: auto;
+            padding: 1rem;
+        }
+
+        .ov-img-wrap img {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 10px;
+            object-fit: contain;
+        }
+
+        /* ── Left Drawer ── */
+        .drawer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 300px;
+            z-index: 50;
+            transform: translateX(calc(-300px + 18px));
+            transition: transform 0.38s cubic-bezier(.22, .68, 0, 1.2);
+        }
+
+        .drawer:hover,
+        .drawer.open {
+            transform: translateX(0);
+        }
+
+        .drawer-panel {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 282px;
+            height: 100%;
+            background: rgba(10, 14, 36, 0.92);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid var(--glass-border);
+            padding: 2rem 1.4rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.4rem;
+            overflow-y: auto;
+        }
+
+        .drawer-handle {
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 28px;
+            height: 100px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-left: none;
+            border-radius: 0 10px 10px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: rgba(200, 210, 255, 0.5);
+            font-size: 0.65rem;
+            writing-mode: vertical-rl;
+            letter-spacing: 0.1em;
+            backdrop-filter: blur(12px);
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .drawer:hover .drawer-handle {
+            background: rgba(108, 99, 255, 0.15);
+            color: var(--accent1);
+        }
+
+        .drawer-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            background: linear-gradient(120deg, var(--accent1), var(--accent2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .drawer-section {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 14px;
+            padding: 1rem 1.1rem;
+        }
+
+        .drawer-section h3 {
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 0.6rem;
+        }
+
+        .drawer-section p {
+            font-size: 0.82rem;
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .drawer-links {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .drawer-link {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.55rem 0.8rem;
+            border-radius: 10px;
+            border: 1px solid var(--glass-border);
+            background: transparent;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: background 0.2s, border-color 0.2s;
+        }
+
+        .drawer-link:hover {
+            background: rgba(108, 99, 255, 0.12);
+            border-color: rgba(108, 99, 255, 0.4);
+        }
+
+        /* ── Footer ── */
+        footer {
+            position: relative;
+            z-index: 3;
+            padding-bottom: 1.5rem;
+            font-size: 0.72rem;
+            color: rgba(200, 210, 255, 0.25);
+            letter-spacing: 0.06em;
+            text-align: center;
+        }
+
+        /* ── Keyframes ── */
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 480px) {
+            .hero-card {
+                padding: 2.2rem 1.5rem 2rem;
+            }
+
+            .btn-grid {
+                grid-template-columns: 1fr;
+                max-width: 260px;
+            }
+
+            .stats-row {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Mouse light orb -->
+    <div id="cursor-light"></div>
+
+    <!-- Invisible cursor (cursor:none on body) -->
+    <div id="custom-cursor">🐭</div>
+
+    <!-- Particle canvas -->
+    <canvas id="particle-canvas"></canvas>
+
+    <main>
+        <!-- Hero Card -->
+        <div class="hero-card">
+
+            <!-- Avatar -->
+            <div class="avatar-wrapper">
+                <div class="avatar-ring"></div>
+                <img id="avatar-img" class="avatar-img" src="image.png" alt="Profil Fotoğrafı"
+                    onerror="this.style.display='none'; document.getElementById('avatar-fb').style.display='flex';" />
+                <div class="avatar-fallback" id="avatar-fb" style="display:none;">🧬</div>
+            </div>
+
+            <!-- Tags -->
+            <div style="text-align:center; margin-top:-0.4rem;">
+                <div
+                    style="font-family:'Space Grotesk',sans-serif; font-size:1.1rem; font-weight:700; background:linear-gradient(120deg,#c8c0ff,#6c63ff 50%,#00d4aa); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">
+                    Aykut Çakıcı</div>
+                <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.2rem; letter-spacing:0.05em;">Veri
+                    Bilimi Portföyü</div>
+            </div>
+
+            <div class="tags">
+                <span class="tag purple">Veri Bilimi</span>
+                <span class="tag teal">Makine Öğrenmesi</span>
+                <span class="tag pink">İstatistik</span>
+            </div>
+
+
+            <p>Normal dağılım analizleri, görselleştirmeler ve istatistiksel modelleme çalışmalarını keşfedin.</p>
+
+            <div class="divider"></div>
+
+            <!-- CTA button -->
+            <a href="#" class="btn btn-renk" onclick="openOverlay('iframe','gauss_cozum.html'); return false;"
+                style="width:100%; flex-direction:row; padding:1rem 1.5rem; gap:0.9rem; border-radius:14px;">
+                <span class="btn-icon">∿</span>
+                <span style="font-size:0.95rem;">Gauss Çözüm</span>
+                <span style="margin-left:auto; opacity:0.5;">→</span>
+            </a>
+        </div>
+
+        <!-- Button grid -->
+        <div class="btn-grid">
+            <a href="#" class="btn btn-renk" onclick="openOverlay('iframe','gauss_cozum.html'); return false;">
+                <span class="btn-icon">📈</span>
+                <span>Gauss</span>
+            </a>
+            <a href="#" class="btn btn-grafik"
+                onclick="openOverlay('img','3.hafta gbt/dagilim_grafikleri.png'); return false;">
+                <span class="btn-icon">📊</span>
+                <span>Grafik</span>
+            </a>
+            <a href="3.hafta gbt/data.csv" class="btn btn-data" download>
+                <span class="btn-icon">📂</span>
+                <span>Data</span>
+            </a>
+        </div>
+
+        <!-- Skills -->
+        <div class="skills-wrap">
+            <span class="skill-pill p1"><span class="skill-dot"></span>Python</span>
+            <span class="skill-pill p2"><span class="skill-dot"></span>NumPy</span>
+            <span class="skill-pill p3"><span class="skill-dot"></span>Pandas</span>
+            <span class="skill-pill p1"><span class="skill-dot"></span>Matplotlib</span>
+            <span class="skill-pill p2"><span class="skill-dot"></span>SciPy</span>
+            <span class="skill-pill p3"><span class="skill-dot"></span>SQL</span>
+            <span class="skill-pill p1"><span class="skill-dot"></span>Gauss Analizi</span>
+        </div>
+    </main>
+
+    <footer>GBT VBA · Veri Bilimi Portföyü · 2026</footer>
+
+    <!-- ── In-page Overlay ── -->
+    <div id="ov-backdrop" class="ov-backdrop" onclick="closeOverlay(event)">
+        <div class="ov-box">
+            <button class="ov-close" onclick="closeOverlay(null)">✕</button>
+            <iframe id="ov-frame" class="ov-frame" src="" style="display:none;"></iframe>
+            <div id="ov-img-wrap" class="ov-img-wrap" style="display:none;">
+                <img id="ov-img" src="" alt="" />
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Left Drawer ── -->
+    <div class="drawer" id="drawer">
+        <div class="drawer-panel">
+            <div class="drawer-title">📌 Hızlı Erişim</div>
+
+            <div class="drawer-section">
+                <h3>Hakkımda</h3>
+                <p>MAKÜ Veri Bilimi ve Analitiği 1. sınıf öğrencisiyim. Veri bilimi ve istatistiksel modeller ve
+                    projeler geliştiriyorum.</p>
+            </div>
+
+            <div class="drawer-section">
+                <h3>Projeler</h3>
+                <div class="drawer-links">
+                    <a href="gauss_cozum.html" class="drawer-link">📈 Gauss Çözüm</a>
+                    <a href="veri_analizi.html" class="drawer-link">🔬 Veri Analizi</a>
+                    <a href="teklif.html" class="drawer-link">📄 Teklif</a>
+                </div>
+            </div>
+
+            <div class="drawer-section">
+                <h3>Dosyalar</h3>
+                <div class="drawer-links">
+                    <a href="3.hafta gbt/data.csv" class="drawer-link" download>📂 data.csv</a>
+                    <a href="3.hafta gbt/dagilim_grafikleri.png" class="drawer-link" target="_blank">🖼 Grafik PNG</a>
+                </div>
+            </div>
+        </div>
+        <div class="drawer-handle"></div>
+    </div>
+
+    <script>
+        // ─── Mouse light orb ───────────────────────────────────────────────
+        const light = document.getElementById('cursor-light');
+        let lx = window.innerWidth / 2, ly = window.innerHeight / 2;
+        let tx = lx, ty = ly;
+
+        document.addEventListener('mousemove', e => { tx = e.clientX; ty = e.clientY; });
+
+        const cur = document.getElementById('custom-cursor');
+
+        // Grow cursor when hovering interactive elements
+        document.querySelectorAll('a, button, .btn, .drawer-link, .skill-pill').forEach(el => {
+            el.addEventListener('mouseenter', () => cur.classList.add('big'));
+            el.addEventListener('mouseleave', () => cur.classList.remove('big'));
+        });
+
+        function animateLight() {
+            lx += (tx - lx) * 0.07;
+            ly += (ty - ly) * 0.07;
+            light.style.left = lx + 'px';
+            light.style.top = ly + 'px';
+            cur.style.left = tx + 'px';
+            cur.style.top = ty + 'px';
+            requestAnimationFrame(animateLight);
+        }
+        animateLight();
+
+        // ─── Particle system ───────────────────────────────────────────────
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resize();
+        window.addEventListener('resize', resize);
+
+        const COLORS = ['#6c63ff', '#00d4aa', '#ff6b9d', '#a78bfa', '#38bdf8'];
+        const PARTICLE_COUNT = 90;
+
+        class Particle {
+            constructor() { this.reset(true); }
+
+            reset(initial = false) {
+                this.x = Math.random() * canvas.width;
+                this.y = initial ? Math.random() * canvas.height : canvas.height + 10;
+                this.vx = (Math.random() - 0.5) * 0.35;
+                this.vy = -(Math.random() * 0.5 + 0.2);
+                this.radius = Math.random() * 2.2 + 0.6;
+                this.alpha = Math.random() * 0.5 + 0.15;
+                this.color = COLORS[Math.floor(Math.random() * COLORS.length)];
+                this.twinkleSpeed = Math.random() * 0.018 + 0.008;
+                this.twinkleDir = Math.random() > 0.5 ? 1 : -1;
+                // Mouse attraction
+                this.mx = 0; this.my = 0;
+            }
+
+            update(mouseX, mouseY) {
+                // Gentle attraction toward cursor
+                const dx = mouseX - this.x;
+                const dy = mouseY - this.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < 180) {
+                    const force = (180 - dist) / 180 * 0.012;
+                    this.vx += dx / dist * force;
+                    this.vy += dy / dist * force;
+                }
+
+                // Damping
+                this.vx *= 0.985;
+                this.vy *= 0.985;
+
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // Twinkle
+                this.alpha += this.twinkleSpeed * this.twinkleDir;
+                if (this.alpha > 0.75 || this.alpha < 0.1) this.twinkleDir *= -1;
+
+                // Wrap / reset
+                if (this.y < -10 || this.x < -20 || this.x > canvas.width + 20) this.reset();
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                ctx.fillStyle = this.color;
+                ctx.shadowColor = this.color;
+                ctx.shadowBlur = 8;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        // Connection lines between nearby particles
+        function drawConnections(particles, mouseX, mouseY) {
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = i + 1; j < particles.length; j++) {
+                    const a = particles[i], b = particles[j];
+                    const dx = a.x - b.x, dy = a.y - b.y;
+                    const d = Math.sqrt(dx * dx + dy * dy);
+                    if (d < 90) {
+                        ctx.save();
+                        ctx.globalAlpha = (1 - d / 90) * 0.12;
+                        ctx.strokeStyle = a.color;
+                        ctx.lineWidth = 0.6;
+                        ctx.beginPath();
+                        ctx.moveTo(a.x, a.y);
+                        ctx.lineTo(b.x, b.y);
+                        ctx.stroke();
+                        ctx.restore();
+                    }
+                }
+                // Mouse proximity highlight
+                const p = particles[i];
+                const dx = p.x - mouseX, dy = p.y - mouseY;
+                const d = Math.sqrt(dx * dx + dy * dy);
+                if (d < 130) {
+                    ctx.save();
+                    ctx.globalAlpha = (1 - d / 130) * 0.22;
+                    ctx.strokeStyle = p.color;
+                    ctx.lineWidth = 0.8;
+                    ctx.beginPath();
+                    ctx.moveTo(p.x, p.y);
+                    ctx.lineTo(mouseX, mouseY);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            }
+        }
+
+        const particles = Array.from({ length: PARTICLE_COUNT }, () => new Particle());
+
+        // Burst on click
+        document.addEventListener('click', e => {
+            for (let i = 0; i < 12; i++) {
+                const p = new Particle();
+                p.x = e.clientX + (Math.random() - 0.5) * 20;
+                p.y = e.clientY + (Math.random() - 0.5) * 20;
+                p.vx = (Math.random() - 0.5) * 2.5;
+                p.vy = (Math.random() - 0.5) * 2.5;
+                p.alpha = 0.9;
+                particles.push(p);
+                if (particles.length > PARTICLE_COUNT + 30) particles.shift();
+            }
+        });
+
+        let mx = window.innerWidth / 2, my = window.innerHeight / 2;
+        document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+
+        function loop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawConnections(particles, mx, my);
+            particles.forEach(p => { p.update(mx, my); p.draw(); });
+            requestAnimationFrame(loop);
+        }
+        loop();
+
+        // ─── Overlay ────────────────────────────────────────────────────────
+        const ovBackdrop = document.getElementById('ov-backdrop');
+        const ovFrame = document.getElementById('ov-frame');
+        const ovImgWrap = document.getElementById('ov-img-wrap');
+        const ovImg = document.getElementById('ov-img');
+
+        function openOverlay(type, src) {
+            ovFrame.style.display = 'none';
+            ovImgWrap.style.display = 'none';
+            if (type === 'iframe') {
+                ovFrame.src = src;
+                ovFrame.style.display = 'block';
+            } else {
+                ovImg.src = src;
+                ovImgWrap.style.display = 'flex';
+            }
+            ovBackdrop.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeOverlay(e) {
+            if (e && e.target !== ovBackdrop) return;
+            ovBackdrop.classList.remove('active');
+            document.body.style.overflow = '';
+            setTimeout(() => { ovFrame.src = ''; ovImg.src = ''; }, 400);
+        }
+
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeOverlay(null); });
+    </script>
+</body>
+
+</html>
